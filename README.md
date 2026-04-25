@@ -6,7 +6,7 @@ using Lightweight Transactions (LWT/CAS) to prevent over-reservation under heavy
 
 ## Features
 - Book catalogue management (add, list, update copies)
-- Member reservations with status tracking (ACTIVE, RETURNED, CANCELLED)
+- Member reservations with status tracking (ACTIVE, RETURNED)
 - Concurrent-safe reservations via Compare-And-Swap with automatic retry
 - Bulk data seeding and 3 stress tests to validate correctness under load
 
