@@ -1,0 +1,2 @@
+cassandra-driver==3.29.1
+tqdm==4.67.3

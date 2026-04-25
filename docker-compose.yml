@@ -1,0 +1,63 @@
+services:
+  cassandra1:
+    image: cassandra:4.1
+    container_name: cassandra1
+    hostname: cassandra1
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=128M
+    ports:
+      - "127.0.0.1:9042:9042"
+    networks:
+      - cassnet
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  cassandra2:
+    image: cassandra:4.1
+    container_name: cassandra2
+    hostname: cassandra2
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=128M
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+    ports:
+      - "127.0.0.2:9042:9042"
+    networks:
+      - cassnet
+
+  cassandra3:
+    image: cassandra:4.1
+    container_name: cassandra3
+    hostname: cassandra3
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=128M
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+    ports:
+      - "127.0.0.3:9042:9042"
+    networks:
+      - cassnet
+
+networks:
+  cassnet:
+    driver: bridge
