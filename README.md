@@ -13,9 +13,15 @@ using Lightweight Transactions (LWT/CAS) to prevent over-reservation under heavy
 ## Setup & Running
 
 ### 1. Reserve loopback addresses for nodes 2 and 3
+Linux:
 ```bash
 sudo ip addr add 127.0.0.2 dev lo
 sudo ip addr add 127.0.0.3 dev lo
+```
+Macos:
+```bash
+sudo ifconfig lo0 alias 127.0.0.2
+sudo ifconfig lo0 alias 127.0.0.3
 ```
 
 ### 2. Start the 3-node Cassandra cluster
