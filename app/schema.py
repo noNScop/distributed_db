@@ -47,6 +47,19 @@ def init_schema():
     ) WITH CLUSTERING ORDER BY (reserved_on DESC);
     """)
 
+    session.execute("""
+    CREATE TABLE IF NOT EXISTS reservations_by_book (
+        book_id         UUID,
+        reserved_on     TIMESTAMP,
+        reservation_id  UUID,
+        book_title      TEXT,
+        member_name     TEXT,
+        due_date        TIMESTAMP,
+        status          TEXT,
+        PRIMARY KEY (book_id, reserved_on, reservation_id)
+    ) WITH CLUSTERING ORDER BY (reserved_on DESC);
+    """)
+
     print("[schema] Keyspace and tables ready.")
 
 
@@ -60,10 +73,6 @@ def prepare_queries():
         "SELECT_RESERVATION_FULL": session.prepare(
             "SELECT * FROM reservations WHERE reservation_id = ?"
         ),
-        "UPDATE_RESERVATION_STATUS": session.prepare("""
-            UPDATE reservations SET status = ?
-            WHERE reservation_id = ?
-        """),
         "INSERT_RESERVATION": session.prepare("""
             INSERT INTO reservations
             (reservation_id, book_id, book_title, member_name, reserved_on, due_date, status)
@@ -72,10 +81,6 @@ def prepare_queries():
         "SELECT_RESERVATIONS_BY_MEMBER": session.prepare("""
             SELECT reservation_id, book_title, reserved_on, due_date, status
             FROM reservations_by_member WHERE member_name = ?
-        """),
-        "UPDATE_RESERVATION_BY_MEMBER_STATUS": session.prepare("""
-            UPDATE reservations_by_member SET status = ?
-            WHERE member_name = ? AND reserved_on = ? AND reservation_id = ?
         """),
         "INSERT_RESERVATION_BY_MEMBER": session.prepare("""
             INSERT INTO reservations_by_member
@@ -113,9 +118,6 @@ def prepare_queries():
         "SELECT_ALL_MEMBERS": session.prepare(
             "SELECT DISTINCT member_name FROM reservations_by_member"
         ),
-        "SELECT_RESERVATIONS_BY_MEMBER_IDS": session.prepare(
-            "SELECT reservation_id FROM reservations_by_member WHERE member_name = ?"
-        ),
         "INSERT_BOOK": session.prepare("""
             INSERT INTO books (book_id, title, author, total_copies, available_copies)
             VALUES (?, ?, ?, ?, ?)
@@ -132,11 +134,27 @@ def prepare_queries():
         "DELETE_RESERVATION": session.prepare(
             "DELETE FROM reservations WHERE reservation_id = ?"
         ),
+        "DELETE_RESERVATION_BY_MEMBER": session.prepare(
+            "DELETE FROM reservations_by_member WHERE member_name = ? AND reserved_on = ? AND reservation_id = ?"
+        ),
         "DELETE_RESERVATIONS_BY_MEMBER": session.prepare(
             "DELETE FROM reservations_by_member WHERE member_name = ?"
         ),
-        "COUNT_ACTIVE_RESERVATIONS": session.prepare("""
-            SELECT COUNT(*) FROM reservations WHERE book_id = ? AND status = 'ACTIVE'
-            ALLOW FILTERING
+
+        # --- Reservations by BOOK ---
+        "DELETE_RESERVATIONS_BY_BOOK": session.prepare(
+            "DELETE FROM reservations_by_book WHERE book_id = ?"
+        ),
+        "INSERT_RESERVATION_BY_BOOK": session.prepare("""
+            INSERT INTO reservations_by_book
+            (book_id, reserved_on, reservation_id, book_title, member_name, due_date, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')
+        """),
+        "DELETE_RESERVATION_BY_BOOK": session.prepare("""
+            DELETE FROM reservations_by_book
+            WHERE book_id = ? AND reserved_on = ? AND reservation_id = ?
+        """),
+        "COUNT_ACTIVE_RESERVATIONS_BY_BOOK": session.prepare("""
+            SELECT COUNT(*) FROM reservations_by_book WHERE book_id = ?
         """),
     }

@@ -18,8 +18,9 @@ def return_book(reservation_id):
     if book_row:
         session.execute(Q["UPDATE_BOOK_COPIES"], (book_row.available_copies + 1, row.book_id))
 
-    session.execute(Q["UPDATE_RESERVATION_STATUS"], ('RETURNED', reservation_id))
-    session.execute(Q["UPDATE_RESERVATION_BY_MEMBER_STATUS"], ('RETURNED', row.member_name, row.reserved_on, reservation_id))
+    session.execute(Q["DELETE_RESERVATION"], (reservation_id,))
+    session.execute(Q["DELETE_RESERVATION_BY_MEMBER"], (row.member_name, row.reserved_on, reservation_id))
+    session.execute(Q["DELETE_RESERVATION_BY_BOOK"], (row.book_id, row.reserved_on, reservation_id))
 
     print(f"[~] '{row.book_title}' returned successfully.")
 
@@ -87,7 +88,7 @@ def make_reservation(book_id, member_name):
                 try:
                     row = session.execute(Q["SELECT_BOOK"], (book_id,)).one()
                     fresh = session.execute(Q["SELECT_BOOK_COPIES_FULL"], (book_id,)).one()
-                    active = session.execute(Q["COUNT_ACTIVE_RESERVATIONS"], (book_id,)).one().count
+                    active = session.execute(Q["COUNT_ACTIVE_RESERVATIONS_BY_BOOK"], (book_id,)).one().count
                     true_available = fresh.total_copies - active
 
                     print(f"[~] Restoring {true_available-row.available_copies} lost copies for '{fresh.title}', retrying...")
@@ -112,6 +113,7 @@ def make_reservation(book_id, member_name):
         try:
             session.execute(Q["INSERT_RESERVATION"], (res_id, book_id, row.title, member_name, now, due))
             session.execute(Q["INSERT_RESERVATION_BY_MEMBER"], (member_name, row.title, now, res_id, due))
+            session.execute(Q["INSERT_RESERVATION_BY_BOOK"], (book_id, now, res_id, row.title, member_name, due))
         except Exception as e:
             print(f"[!] Reservation write failed: {e}")
             raise e

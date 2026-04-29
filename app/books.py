@@ -29,6 +29,10 @@ def reinitialize():
     for row in session.execute(Q["SELECT_ALL_MEMBERS"]):
         session.execute(Q["DELETE_RESERVATIONS_BY_MEMBER"], (row.member_name,))
 
+    print("[reinit] Clearing reservations_by_book...")
+    for row in session.execute(Q["SELECT_ALL_BOOKS"]):
+        session.execute(Q["DELETE_RESERVATIONS_BY_BOOK"], (row.book_id,))
+
     print("[reinit] Clearing all books...")
     for row in session.execute(Q["SELECT_ALL_BOOKS"]):
         session.execute(Q["DELETE_BOOK"], (row.book_id,))
@@ -86,16 +90,3 @@ def update_book_copies(book_id, delta, *, reason="manual adjustment"):
 
     print(f"[~] '{row.title}' copies: {row.total_copies} → {new_total} ({reason})")
     return True
-
-
-def reconcile_book(book_id):
-    current = session.execute(Q["SELECT_BOOK_COPIES_FULL"], (book_id,)).one()
-    if not current or current.available_copies > 0:
-        return
-
-    active = session.execute(Q["COUNT_ACTIVE_RESERVATIONS"], (book_id,)).one().count
-    true_available = current.total_copies - active
-
-    if true_available > 0:
-        print(f"[reconcile] Found {true_available} lost copies for book {book_id}, restoring...")
-        session.execute(Q["UPDATE_BOOK_COPIES"], (true_available, book_id))
